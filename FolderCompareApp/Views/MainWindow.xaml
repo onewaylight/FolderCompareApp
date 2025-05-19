@@ -1,0 +1,215 @@
+﻿<Window x:Class="FolderCompareApp.Views.MainWindow"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+        xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+        xmlns:local="clr-namespace:FolderCompareApp"
+        xmlns:viewmodels="clr-namespace:FolderCompareApp.ViewModels"
+        xmlns:models="clr-namespace:FolderCompareApp.Models"
+        xmlns:converters="clr-namespace:FolderCompareApp.Converters"
+        mc:Ignorable="d"
+        Title="Folder Comparison Tool" Height="700" Width="1200">
+
+    <Window.Resources>
+        <converters:BoolToColorConverter x:Key="BoolToColorConverter" 
+                                       TrueColor="#FFEEEE" 
+                                       FalseColor="Transparent"/>
+
+        <converters:StatusToColorConverter x:Key="StatusToColorConverter"/>
+
+        <Style x:Key="HeaderTextBlockStyle" TargetType="TextBlock">
+            <Setter Property="FontWeight" Value="Bold"/>
+            <Setter Property="FontSize" Value="14"/>
+            <Setter Property="Margin" Value="0,0,0,5"/>
+        </Style>
+
+        <Style x:Key="StandardButtonStyle" TargetType="Button">
+            <Setter Property="Padding" Value="15,8"/>
+            <Setter Property="Margin" Value="5"/>
+            <Setter Property="MinWidth" Value="120"/>
+        </Style>
+
+        <Style x:Key="StatusBarTextBlockStyle" TargetType="TextBlock">
+            <Setter Property="VerticalAlignment" Value="Center"/>
+            <Setter Property="Margin" Value="10,0"/>
+        </Style>
+    </Window.Resources>
+
+    <Grid>
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="*"/>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="Auto"/>
+        </Grid.RowDefinitions>
+
+        <!-- Top Panel with Folder Selection -->
+        <Grid Grid.Row="0" Margin="10">
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="*"/>
+                <ColumnDefinition Width="*"/>
+            </Grid.ColumnDefinitions>
+
+            <!-- Left Folder Panel -->
+            <Border Grid.Column="0" BorderBrush="Gray" BorderThickness="1" Margin="5" Padding="10">
+                <Grid>
+                    <Grid.RowDefinitions>
+                        <RowDefinition Height="Auto"/>
+                        <RowDefinition Height="Auto"/>
+                    </Grid.RowDefinitions>
+
+                    <TextBlock Grid.Row="0" Text="{Binding LeftFolderName}" 
+                               Style="{StaticResource HeaderTextBlockStyle}"/>
+
+                    <Grid Grid.Row="1">
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="*"/>
+                            <ColumnDefinition Width="Auto"/>
+                        </Grid.ColumnDefinitions>
+
+                        <TextBox Grid.Column="0" Text="{Binding LeftFolderPath}" 
+                                 Padding="5" Margin="0,0,5,0" IsReadOnly="True"/>
+                        <Button Grid.Column="1" Content="Select Folder" 
+                                Command="{Binding SelectLeftFolderCommand}"
+                                Style="{StaticResource StandardButtonStyle}"/>
+                    </Grid>
+                </Grid>
+            </Border>
+
+            <!-- Right Folder Panel -->
+            <Border Grid.Column="1" BorderBrush="Gray" BorderThickness="1" Margin="5" Padding="10">
+                <Grid>
+                    <Grid.RowDefinitions>
+                        <RowDefinition Height="Auto"/>
+                        <RowDefinition Height="Auto"/>
+                    </Grid.RowDefinitions>
+
+                    <TextBlock Grid.Row="0" Text="{Binding RightFolderName}" 
+                               Style="{StaticResource HeaderTextBlockStyle}"/>
+
+                    <Grid Grid.Row="1">
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="*"/>
+                            <ColumnDefinition Width="Auto"/>
+                        </Grid.ColumnDefinitions>
+
+                        <TextBox Grid.Column="0" Text="{Binding RightFolderPath}" 
+                                 Padding="5" Margin="0,0,5,0" IsReadOnly="True"/>
+                        <Button Grid.Column="1" Content="Select Folder" 
+                                Command="{Binding SelectRightFolderCommand}"
+                                Style="{StaticResource StandardButtonStyle}"/>
+                    </Grid>
+                </Grid>
+            </Border>
+        </Grid>
+
+        <!-- Action Buttons -->
+        <StackPanel Grid.Row="1" Orientation="Horizontal" HorizontalAlignment="Center" Margin="0,0,0,10">
+            <Button Content="Compare Folders" 
+                    Command="{Binding CompareCommand}"
+                    Style="{StaticResource StandardButtonStyle}"
+                    Background="#E6F2FF"
+                    FontWeight="Bold"/>
+        </StackPanel>
+
+        <!-- Filter Controls -->
+        <Grid Grid.Row="2" Margin="10,0">
+            <Grid.RowDefinitions>
+                <RowDefinition Height="Auto"/>
+                <RowDefinition Height="*"/>
+            </Grid.RowDefinitions>
+
+            <Grid Grid.Row="0" Margin="0,0,0,5">
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="Auto"/>
+                    <ColumnDefinition Width="*"/>
+                    <ColumnDefinition Width="Auto"/>
+                    <ColumnDefinition Width="Auto"/>
+                </Grid.ColumnDefinitions>
+
+                <TextBlock Grid.Column="0" Text="Filter:" VerticalAlignment="Center" Margin="0,0,5,0"/>
+                <TextBox Grid.Column="1" Text="{Binding FilterText, UpdateSourceTrigger=PropertyChanged}" 
+                         Padding="5" Margin="0,0,10,0"/>
+
+                <TextBlock Grid.Column="2" Text="Status:" VerticalAlignment="Center" Margin="0,0,5,0"/>
+                <ComboBox Grid.Column="3" Width="120" 
+                          SelectedItem="{Binding StatusFilter}" 
+                          IsEnabled="{Binding IsStatusFilterBtnEnabled}"
+                          Padding="5"
+                          ItemsSource="{Binding Source={x:Static models:EnumHelper.GetComparisonStatusValues}}">
+                    <ComboBox.ItemTemplate>
+                        <DataTemplate>
+                            <TextBlock Text="{Binding Converter={StaticResource EnumDisplayConverter}}"/>
+                        </DataTemplate>
+                    </ComboBox.ItemTemplate>
+                </ComboBox>
+            </Grid>
+
+            <!-- Results DataGrid -->
+            <DataGrid Grid.Row="1" 
+                      ItemsSource="{Binding FilteredComparisonResults}" 
+                      AutoGenerateColumns="False" 
+                      IsReadOnly="True"
+                      AlternatingRowBackground="#F5F5F5"
+                      BorderBrush="Gray" 
+                      BorderThickness="1"
+                      VerticalScrollBarVisibility="Auto"
+                      HorizontalScrollBarVisibility="Auto">
+                <DataGrid.Columns>
+                    <DataGridTextColumn Header="Status" Binding="{Binding StatusText}" Width="Auto">
+                        <DataGridTextColumn.CellStyle>
+                            <Style TargetType="DataGridCell">
+                                <Setter Property="Foreground" Value="{Binding Status, Converter={StaticResource StatusToColorConverter}}"/>
+                                <Setter Property="FontWeight" Value="Bold"/>
+                            </Style>
+                        </DataGridTextColumn.CellStyle>
+                    </DataGridTextColumn>
+                    <DataGridTextColumn Header="Path" Binding="{Binding Path}" Width="*"/>
+                    <DataGridTextColumn Header="Size (Left)" Binding="{Binding SizeLeftFormatted}" Width="Auto">
+                        <DataGridTextColumn.CellStyle>
+                            <Style TargetType="DataGridCell">
+                                <Setter Property="Background" Value="{Binding SizeDifferent, Converter={StaticResource BoolToColorConverter}}"/>
+                            </Style>
+                        </DataGridTextColumn.CellStyle>
+                    </DataGridTextColumn>
+                    <DataGridTextColumn Header="Size (Right)" Binding="{Binding SizeRightFormatted}" Width="Auto">
+                        <DataGridTextColumn.CellStyle>
+                            <Style TargetType="DataGridCell">
+                                <Setter Property="Background" Value="{Binding SizeDifferent, Converter={StaticResource BoolToColorConverter}}"/>
+                            </Style>
+                        </DataGridTextColumn.CellStyle>
+                    </DataGridTextColumn>
+                    <DataGridTextColumn Header="Date Modified (Left)" Binding="{Binding DateLeftFormatted}" Width="Auto">
+                        <DataGridTextColumn.CellStyle>
+                            <Style TargetType="DataGridCell">
+                                <Setter Property="Background" Value="{Binding DateDifferent, Converter={StaticResource BoolToColorConverter}}"/>
+                            </Style>
+                        </DataGridTextColumn.CellStyle>
+                    </DataGridTextColumn>
+                    <DataGridTextColumn Header="Date Modified (Right)" Binding="{Binding DateRightFormatted}" Width="Auto">
+                        <DataGridTextColumn.CellStyle>
+                            <Style TargetType="DataGridCell">
+                                <Setter Property="Background" Value="{Binding DateDifferent, Converter={StaticResource BoolToColorConverter}}"/>
+                            </Style>
+                        </DataGridTextColumn.CellStyle>
+                    </DataGridTextColumn>
+                </DataGrid.Columns>
+            </DataGrid>
+        </Grid>
+
+        <!-- Action Buttons at Bottom -->
+        <StackPanel Grid.Row="3" Orientation="Horizontal" HorizontalAlignment="Right" Margin="10,5">
+            <Button Content="Export Results" 
+                    Command="{Binding ExportResultsCommand}"
+                    Style="{StaticResource StandardButtonStyle}"/>
+        </StackPanel>
+
+        <!-- Status Bar -->
+        <StatusBar Grid.Row="4" Background="#F0F0F0">
+            <TextBlock Text="{Binding StatusMessage}" Style="{StaticResource StatusBarTextBlockStyle}"/>
+            <ProgressBar Width="100" Height="15" IsIndeterminate="{Binding IsComparing}" 
+                         Visibility="{Binding IsComparing, Converter={StaticResource BooleanToVisibilityConverter}}"/>
+        </StatusBar>
+    </Grid>
+</Window>
